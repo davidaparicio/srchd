@@ -312,4 +312,11 @@ export class Metrics {
       agents: agentsMetrics,
     };
   }
+
+  static async agentTokens(
+    experiment: ExperimentResource,
+    agent: AgentResource,
+  ): Promise<TokenUsage> {
+    return await TokenUsageResource.getAgentTokenUsage(experiment, agent);
+  }
 }

@@ -114,6 +114,50 @@ metricsCmd
     showMetrics(experiment, (e) => Metrics.publications(e)),
   );
 
+tokensMetric
+  .command("agent")
+  .argument("<agent>", "Agent name")
+  .requiredOption("-e, --experiment <experiment>", "Experiment name")
+  .action(async (agent, options) => {
+    const experiment = await ExperimentResource.findByName(options.experiment);
+    if (!experiment) {
+      return exitWithError(
+        new Err(
+          new SrchdError(
+            "not_found_error",
+            `Experiment '${options.experiment}' not found.`,
+          ),
+        ),
+      );
+    }
+
+    const agentRes = await AgentResource.findByName(experiment, agent);
+    if (!agentRes) {
+      return exitWithError(
+        new Err(
+          new SrchdError(
+            "not_found_error",
+            `Agent '${agent}' not found in experiment '${options.experiment}'.`,
+          ),
+        ),
+      );
+    }
+
+    const metrics = await Metrics.agentTokens(experiment, agentRes);
+    if (!metrics) {
+      return exitWithError(
+        new Err(
+          new SrchdError(
+            "not_found_error",
+            `Experiment '${options.experiment}' not found.`,
+          ),
+        ),
+      );
+    }
+
+    console.table([metrics]);
+  });
+
 // Experiment commands
 const experimentCmd = program
   .command("experiment")
