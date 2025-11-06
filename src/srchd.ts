@@ -16,11 +16,15 @@ import { serve } from "@hono/node-server";
 import localApp from "./server/local";
 import prodApp from "./server/production";
 import { isMistralModel } from "./models/mistral";
+<<<<<<< HEAD
 import {
   isToolNameList,
   NON_DEFAULT_TOOLS,
   DEFAULT_TOOLS,
 } from "./tools/constants";
+=======
+import { isToolNameList, TOOLS, DEFAULT_TOOLS } from "./tools/constants";
+>>>>>>> d69c517 (added-token-metrics+added-cmd-line-args-for-metrics)
 import { Metrics } from "./metrics";
 
 const exitWithError = (err: Err<SrchdError>) => {
@@ -43,34 +47,56 @@ program
 const metricsCmd = program.command("metrics").description("Show metrics");
 
 metricsCmd
+<<<<<<< HEAD
   .command("messages")
   .description("Show message metrics")
   .argument("<experiment>", "Experiment name")
   .action(async (experiment) => {
     const experimentRes = await ExperimentResource.findByName(experiment);
     if (!experimentRes) {
+=======
+  .command("experiment")
+  .description("Show experiment metrics")
+  .requiredOption("-e, --experiment <experiment>", "Experiment name")
+  .action(async (options) => {
+    const experiment = await ExperimentResource.findByName(options.experiment);
+    if (!experiment) {
+>>>>>>> d69c517 (added-token-metrics+added-cmd-line-args-for-metrics)
       return exitWithError(
         new Err(
           new SrchdError(
             "not_found_error",
+<<<<<<< HEAD
             `Experiment '${experiment}' not found.`,
+=======
+            `Experiment '${options.experiment}' not found.`,
+>>>>>>> d69c517 (added-token-metrics+added-cmd-line-args-for-metrics)
           ),
         ),
       );
     }
 
+<<<<<<< HEAD
     const metrics = await Metrics.messages(experimentRes);
+=======
+    const metrics = await Metrics.experimentMessages(experiment);
+>>>>>>> d69c517 (added-token-metrics+added-cmd-line-args-for-metrics)
     if (!metrics) {
       return exitWithError(
         new Err(
           new SrchdError(
             "not_found_error",
+<<<<<<< HEAD
             `Experiment '${experiment}' not found.`,
+=======
+            `Experiment '${options.experiment}' not found.`,
+>>>>>>> d69c517 (added-token-metrics+added-cmd-line-args-for-metrics)
           ),
         ),
       );
     }
 
+<<<<<<< HEAD
     console.table([metrics.experiment]);
     const agents = [];
     for (const [name, agentMetrics] of Object.entries(metrics.agents)) {
@@ -86,23 +112,92 @@ metricsCmd
   .action(async (experiment) => {
     const experimentRes = await ExperimentResource.findByName(experiment);
     if (!experimentRes) {
+=======
+    console.table([metrics]);
+  });
+
+metricsCmd
+  .command("agent")
+  .description("Show agent metrics")
+  .requiredOption("-e, --experiment <experiment>", "Experiment name")
+  .requiredOption("-a, --agent <agent>", "Agent name")
+  .action(async (options) => {
+    const experiment = await ExperimentResource.findByName(options.experiment);
+    if (!experiment) {
+>>>>>>> d69c517 (added-token-metrics+added-cmd-line-args-for-metrics)
       return exitWithError(
         new Err(
           new SrchdError(
             "not_found_error",
+<<<<<<< HEAD
             `Experiment '${experiment}' not found.`,
+=======
+            `Experiment '${options.experiment}' not found.`,
+>>>>>>> d69c517 (added-token-metrics+added-cmd-line-args-for-metrics)
           ),
         ),
       );
     }
 
+<<<<<<< HEAD
     const metrics = await Metrics.tokenUsage(experimentRes);
+=======
+    const agent = await AgentResource.findByName(experiment, options.agent);
+    if (!agent) {
+      return exitWithError(
+        new Err(
+          new SrchdError(
+            "not_found_error",
+            `Agent '${options.agent}' not found in experiment '${options.experiment}'.`,
+          ),
+        ),
+      );
+    }
+
+    const metrics = await Metrics.agentMessages(experiment, agent);
+>>>>>>> d69c517 (added-token-metrics+added-cmd-line-args-for-metrics)
     if (!metrics) {
       return exitWithError(
         new Err(
           new SrchdError(
             "not_found_error",
+<<<<<<< HEAD
             `Experiment '${experiment}' not found.`,
+=======
+            `Experiment '${options.experiment}' not found.`,
+          ),
+        ),
+      );
+    }
+
+    console.table([metrics]);
+  });
+
+metricsCmd
+  .command("tokens")
+  .description("Show token usage")
+  .requiredOption("-e, --experiment <experiment>", "Experiment name")
+  .action(async (options) => {
+    const experiment = await ExperimentResource.findByName(options.experiment);
+    if (!experiment) {
+      return exitWithError(
+        new Err(
+          new SrchdError(
+            "not_found_error",
+            `Experiment '${options.experiment}' not found.`,
+          ),
+        ),
+      );
+    }
+
+    const metrics = await Metrics.tokens(experiment);
+    if (!metrics) {
+      return exitWithError(
+        new Err(
+          new SrchdError(
+            "not_found_error",
+            `Experiment '${options.experiment}' not found.`,
+>>>>>>> d69c517 (added-token-metrics+added-cmd-line-args-for-metrics)
           ),
         ),
       );
@@ -115,12 +210,17 @@ metricsCmd
       },
     ]);
     const agents = [];
+<<<<<<< HEAD
     for (const [name, usage] of Object.entries(metrics.agentsTokenUsage)) {
+=======
+    for (const { name, usage } of Object.values(metrics.agentsTokenUsage)) {
+>>>>>>> d69c517 (added-token-metrics+added-cmd-line-args-for-metrics)
       agents.push({ name, ...usage });
     }
     console.table(agents);
   });
 
+<<<<<<< HEAD
 metricsCmd
   .command("publications")
   .description("Calculate publication metrics")
@@ -158,6 +258,8 @@ metricsCmd
     console.table(agents);
   });
 
+=======
+>>>>>>> d69c517 (added-token-metrics+added-cmd-line-args-for-metrics)
 // Experiment commands
 const experimentCmd = program
   .command("experiment")
