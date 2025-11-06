@@ -1,4 +1,10 @@
-import { TokenUsage } from "../models";
+export type TokenUsage = {
+  total: number;
+  input: number;
+  output: number;
+  cached: number;
+  thinking: number;
+};
 
 export interface UnifiedMetrics<E, A = E> {
   experiment: E;

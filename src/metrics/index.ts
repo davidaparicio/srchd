@@ -22,19 +22,32 @@ function sum(acc: number, cur: number): number {
 }
 
 export class Metrics {
-  /**
-   * Calculates the following metrics for an experiment:
-   * - Total number of messages
-   * - Number of agent messages
-   * - Number of tool call messages
-   * - Number of thinking messages
-   * @param experiment
-   * @returns experiment message metrics
-   */
-  private static async experimentMessages(
+  private experiment: ExperimentResource;
+  private agents: AgentResource[];
+  private publications: PublicationResource[];
+
+  constructor(
     experiment: ExperimentResource,
-  ): Promise<ExperimentMessageMetrics | undefined> {
-    const messages = await MessageResource.listMessagesByExperiment(experiment);
+    agents: AgentResource[],
+    publications: PublicationResource[],
+  ) {
+    this.experiment = experiment;
+    this.agents = agents;
+    this.publications = publications;
+  }
+
+  static async create(experiment: ExperimentResource): Promise<Metrics> {
+    const agents = await AgentResource.listByExperiment(experiment);
+    const publications = await PublicationResource.listByExperiment(experiment);
+    return new Metrics(experiment, agents, publications);
+  }
+
+  async getExperimentMessageMetrics(): Promise<
+    ExperimentMessageMetrics | undefined
+  > {
+    const messages = await MessageResource.listMessagesByExperiment(
+      this.experiment,
+    );
     const totalMessages = messages.length;
     if (totalMessages === 0) {
       return undefined;
@@ -76,7 +89,7 @@ export class Metrics {
     agent: AgentResource,
   ): Promise<AgentMessageMetrics | undefined> {
     const messages = await MessageResource.listMessagesByAgent(
-      experiment,
+      this.experiment,
       agent,
     );
     const totalMessages = messages.length;
@@ -105,13 +118,11 @@ export class Metrics {
     const toolCallsPerAgenticLoopAgg = [0];
     const thinkingPerAgenticLoopAgg = [0];
     let agenticLoopsPassed = 0;
-    // We start at 1 because the first message is always the user's first message
-    for (let i = 1; i < fullMessages.length; i++) {
-      messagesPerAgenticLoopAgg[agenticLoopsPassed]++;
-      const role = fullMessages[i].role;
-      const content_types = fullMessages[i].content.map((c) => c.type);
-
-      if (role === "user" && content_types.every((t) => t === "text")) {
+    for (let i = 0; i < fullMessages.length; i++) {
+      if (
+        fullMessages[i].role === "user" &&
+        fullMessages[i].content.every((c) => c.type === "text")
+      ) {
         // On each agentic loop we aggregate on a new index
         agenticLoopsPassed += 1;
         messagesPerAgenticLoopAgg.push(0);
@@ -127,11 +138,14 @@ export class Metrics {
     }
 
     const messagesPerAgenticLoop =
-      messagesPerAgenticLoopAgg.reduce(sum, 0) / agenticLoops;
+      messagesPerAgenticLoopAgg.reduce((acc, cur) => acc + cur, 0) /
+      agenticLoops;
     const toolCallsPerAgenticLoop =
-      toolCallsPerAgenticLoopAgg.reduce(sum, 0) / agenticLoops;
+      toolCallsPerAgenticLoopAgg.reduce((acc, cur) => acc + cur, 0) /
+      agenticLoops;
     const thinkingPerAgenticLoop =
-      thinkingPerAgenticLoopAgg.reduce(sum, 0) / agenticLoops;
+      thinkingPerAgenticLoopAgg.reduce((acc, cur) => acc + cur, 0) /
+      agenticLoops;
 
     return {
       totalMessages,
