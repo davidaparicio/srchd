@@ -11,6 +11,15 @@ import {
 } from "./types";
 
 export class Metrics {
+  /**
+   * Calculates the following metrics for an experiment:
+   * - Total number of messages
+   * - Number of agent messages
+   * - Number of tool call messages
+   * - Number of thinking messages
+   * @param experiment
+   * @returns experiment message metrics
+   */
   private static async experimentMessages(
     experiment: ExperimentResource,
   ): Promise<ExperimentMessageMetrics | undefined> {
@@ -124,6 +133,11 @@ export class Metrics {
     };
   }
 
+  /**
+   * Calculates the metrics of an experiment and its agents
+   * @param experiment
+   * @returns experiment and agent message metrics
+   */
   static async messages(
     experiment: ExperimentResource,
   ): Promise<MessageMetrics | undefined> {
@@ -151,6 +165,14 @@ export class Metrics {
     };
   }
 
+  /**
+   * Calculates the following metrics for an experiment:
+   * - Experiment token usage
+   * - Agent token usage for each agent
+   * - Token throughput
+   * @param experiment
+   * @returns token metrics
+   */
   static async tokenUsage(
     experiment: ExperimentResource,
   ): Promise<TokenMetrics> {
