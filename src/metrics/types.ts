@@ -19,6 +19,6 @@ export type AgentMessageMetrics = {
 
 export type TokenMetrics = {
   experimentTokenUsage: TokenUsage;
-  agentsTokenUsage: { [agentId: string]: { name: string; usage: TokenUsage } };
+  agentsTokenUsage: { [agentName: string]: TokenUsage };
   tokenThroughput?: number;
 };
