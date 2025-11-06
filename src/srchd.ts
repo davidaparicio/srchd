@@ -22,12 +22,7 @@ import {
   DEFAULT_TOOLS,
 } from "./tools/constants";
 import { Metrics } from "./metrics";
-<<<<<<< HEAD
 import { UnifiedMetrics } from "./metrics/types";
-=======
-import { TokenFlags } from "typescript";
-import { TokenUsageResource } from "./resources/token_usage";
->>>>>>> 92ab3b7 (rm redundant code)
 
 const exitWithError = (err: Err<SrchdError>) => {
   console.error(
