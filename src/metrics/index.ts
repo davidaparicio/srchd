@@ -22,6 +22,15 @@ function sum(acc: number, cur: number): number {
 }
 
 export class Metrics {
+  /**
+   * Calculates the following metrics for an experiment:
+   * - Total number of messages
+   * - Number of agent messages
+   * - Number of tool call messages
+   * - Number of thinking messages
+   * @param experiment
+   * @returns experiment message metrics
+   */
   private static async experimentMessages(
     experiment: ExperimentResource,
   ): Promise<ExperimentMessageMetrics | undefined> {
