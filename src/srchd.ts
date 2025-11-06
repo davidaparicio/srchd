@@ -106,7 +106,6 @@ metricsCmd
     showMetrics(experiment, (e) => Metrics.tokenUsage(e)),
   );
 
-<<<<<<< HEAD
 metricsCmd
   .command("publications")
   .description("Calculate publication metrics")
@@ -115,8 +114,6 @@ metricsCmd
     showMetrics(experiment, (e) => Metrics.publications(e)),
   );
 
-=======
->>>>>>> a75b863 (consolidating metrics)
 // Experiment commands
 const experimentCmd = program
   .command("experiment")
