@@ -126,12 +126,12 @@ export class Metrics {
       thinkingPerAgenticLoopAgg[agenticLoopsPassed] += thinkings;
     }
 
-    // ∑ (x/n) = (∑ x)/n
-    const avg = (acc: number, cur: number) => acc + cur / agenticLoops;
-
-    const messagesPerAgenticLoop = messagesPerAgenticLoopAgg.reduce(avg, 0);
-    const toolCallsPerAgenticLoop = toolCallsPerAgenticLoopAgg.reduce(avg, 0);
-    const thinkingPerAgenticLoop = thinkingPerAgenticLoopAgg.reduce(avg, 0);
+    const messagesPerAgenticLoop =
+      messagesPerAgenticLoopAgg.reduce(sum, 0) / agenticLoops;
+    const toolCallsPerAgenticLoop =
+      toolCallsPerAgenticLoopAgg.reduce(sum, 0) / agenticLoops;
+    const thinkingPerAgenticLoop =
+      thinkingPerAgenticLoopAgg.reduce(sum, 0) / agenticLoops;
 
     return {
       totalMessages,
@@ -309,6 +309,107 @@ export class Metrics {
 
     for (const agent of agents) {
       const metrics = await agentRetriever(experiment, agent);
+      if (!metrics) {
+        // Note: this shouldn't happen as all the agents are extracted from the experiment
+        continue;
+      }
+      agentsMetrics[agent.toJSON().name] = metrics;
+    }
+    return {
+      experiment: experimentMetrics,
+      agents: agentsMetrics,
+    };
+  }
+
+  private static async experimentPublications(
+    experiment: ExperimentResource,
+  ): Promise<ExperimentPublicationMetrics | undefined> {
+    const publications = await PublicationResource.listByExperiment(experiment);
+    const totalPublications = publications.length;
+    if (totalPublications === 0) {
+      return undefined;
+    }
+
+    const totalPublished = publications.filter(
+      (p) => p.toJSON().status === "PUBLISHED",
+    ).length;
+
+    const scores: number[] = [];
+
+    for (const publication of publications) {
+      const reviews = publication.toJSON().reviews;
+      const publicationGrades = removeNulls(reviews.map((r) => r.grade));
+      const publicationScores = publicationGrades.map(gradeToScore);
+      scores.push(...publicationScores);
+    }
+
+    const score = scores.reduce(sum, 0) / scores.length;
+
+    return {
+      totalPublications,
+      totalPublished,
+      averageReviewGrade: scoreToGrade(score),
+    };
+  }
+
+  private static async agentPublications(
+    experiment: ExperimentResource,
+    agent: AgentResource,
+  ): Promise<AgentPublicationMetrics | undefined> {
+    const publications = await PublicationResource.listByAuthor(
+      experiment,
+      agent,
+    );
+    const totalPublications = publications.length;
+    if (totalPublications === 0) {
+      return undefined;
+    }
+
+    const totalPublished = publications.filter(
+      (p) => p.toJSON().status === "PUBLISHED",
+    ).length;
+
+    const scores: number[] = [];
+
+    for (const publication of publications) {
+      const reviews = publication.toJSON().reviews;
+      const publicationGrades = removeNulls(reviews.map((r) => r.grade));
+      const publicationScores = publicationGrades.map(gradeToScore);
+      scores.push(...publicationScores);
+    }
+
+    const score = scores.reduce(sum, 0) / scores.length;
+
+    const publicationRate = totalPublished / totalPublications;
+
+    return {
+      totalPublications,
+      totalPublished,
+      averageReviewGrade: scoreToGrade(score),
+      publicationRate,
+    };
+  }
+
+  /**
+   * Calculates the metrics of an experiment and its agents
+   * @param experiment
+   * @returns experiment and agent publication metrics
+   */
+  static async publications(
+    experiment: ExperimentResource,
+  ): Promise<PublicationMetrics | undefined> {
+    const experimentMetrics = await Metrics.experimentPublications(experiment);
+    if (!experimentMetrics) {
+      return undefined;
+    }
+    const agents = await AgentResource.listByExperiment(experiment);
+
+    const agentsMetrics: {
+      [agentName: string]: AgentPublicationMetrics;
+    } = {};
+
+    for (const agent of agents) {
+      const metrics = await Metrics.agentPublications(experiment, agent);
       if (!metrics) {
         // Note: this shouldn't happen as all the agents are extracted from the experiment
         continue;
