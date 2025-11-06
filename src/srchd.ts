@@ -118,6 +118,9 @@ metricsCmd
   });
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 9be2024 (publications)
 metricsCmd
   .command("publications")
   .description("Calculate publication metrics")
@@ -155,8 +158,11 @@ metricsCmd
     console.table(agents);
   });
 
+<<<<<<< HEAD
 =======
 >>>>>>> 632b084 (consolidating metrics)
+=======
+>>>>>>> 9be2024 (publications)
 // Experiment commands
 const experimentCmd = program
   .command("experiment")
