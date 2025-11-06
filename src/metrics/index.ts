@@ -185,6 +185,7 @@ export class Metrics {
     );
   }
 
+<<<<<<< HEAD
   /**
    * Calculates the following metrics for an experiment:
    * - Total number of publications
@@ -420,5 +421,12 @@ export class Metrics {
       experiment: experimentMetrics,
       agents: agentsMetrics,
     };
+=======
+  static async agentTokens(
+    experiment: ExperimentResource,
+    agent: AgentResource,
+  ): Promise<TokenUsage> {
+    return await TokenUsageResource.getAgentTokenUsage(experiment, agent);
+>>>>>>> 72e6318 (made-cmd-line-more-orthogonal)
   }
 }
