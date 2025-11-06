@@ -16,11 +16,7 @@ import { serve } from "@hono/node-server";
 import localApp from "./server/local";
 import prodApp from "./server/production";
 import { isMistralModel } from "./models/mistral";
-import {
-  isToolNameList,
-  DEFAULT_TOOLS,
-  NON_DEFAULT_TOOLS,
-} from "./tools/constants";
+import { isToolNameList, TOOLS, DEFAULT_TOOLS } from "./tools/constants";
 import { Metrics } from "./metrics";
 import { UnifiedMetrics } from "./metrics/types";
 
