@@ -22,7 +22,12 @@ import {
   DEFAULT_TOOLS,
 } from "./tools/constants";
 import { Metrics } from "./metrics";
+<<<<<<< HEAD
 import { UnifiedMetrics } from "./metrics/types";
+=======
+import { TokenFlags } from "typescript";
+import { TokenUsageResource } from "./resources/token_usage";
+>>>>>>> 92ab3b7 (rm redundant code)
 
 const exitWithError = (err: Err<SrchdError>) => {
   console.error(
@@ -115,6 +120,38 @@ metricsCmd
   );
 
 tokensMetric
+  .command("experiment")
+  .argument("<experiment>", "Experiment name")
+  .action(async (experiment) => {
+    const experimentRes = await ExperimentResource.findByName(experiment);
+    if (!experimentRes) {
+      return exitWithError(
+        new Err(
+          new SrchdError(
+            "not_found_error",
+            `Experiment '${experiment}' not found.`,
+          ),
+        ),
+      );
+    }
+
+    const metrics =
+      await TokenUsageResource.getExperimentTokenUsage(experimentRes);
+    if (!metrics) {
+      return exitWithError(
+        new Err(
+          new SrchdError(
+            "not_found_error",
+            `Experiment '${experiment}' not found.`,
+          ),
+        ),
+      );
+    }
+
+    console.table([metrics]);
+  });
+
+tokensMetric
   .command("agent")
   .argument("<agent>", "Agent name")
   .requiredOption("-e, --experiment <experiment>", "Experiment name")
@@ -143,7 +180,10 @@ tokensMetric
       );
     }
 
-    const metrics = await Metrics.agentTokens(experiment, agentRes);
+    const metrics = await TokenUsageResource.getAgentTokenUsage(
+      experiment,
+      agentRes,
+    );
     if (!metrics) {
       return exitWithError(
         new Err(
