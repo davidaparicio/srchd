@@ -22,7 +22,7 @@ function sum(acc: number, cur: number): number {
 }
 
 export class Metrics {
-  static async experimentMessages(
+  private static async experimentMessages(
     experiment: ExperimentResource,
   ): Promise<ExperimentMessageMetrics | undefined> {
     const messages = await MessageResource.listMessagesByExperiment(experiment);
