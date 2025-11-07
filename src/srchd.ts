@@ -16,7 +16,11 @@ import { serve } from "@hono/node-server";
 import localApp from "./server/local";
 import prodApp from "./server/production";
 import { isMistralModel } from "./models/mistral";
-import { isToolNameList, TOOLS, DEFAULT_TOOLS } from "./tools/constants";
+import {
+  isToolNameList,
+  NON_DEFAULT_TOOLS,
+  DEFAULT_TOOLS,
+} from "./tools/constants";
 import { Metrics } from "./metrics";
 
 const exitWithError = (err: Err<SrchdError>) => {
@@ -117,10 +121,6 @@ metricsCmd
     console.table(agents);
   });
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 9be2024 (publications)
 metricsCmd
   .command("publications")
   .description("Calculate publication metrics")
@@ -158,11 +158,6 @@ metricsCmd
     console.table(agents);
   });
 
-<<<<<<< HEAD
-=======
->>>>>>> 632b084 (consolidating metrics)
-=======
->>>>>>> 9be2024 (publications)
 // Experiment commands
 const experimentCmd = program
   .command("experiment")
