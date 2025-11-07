@@ -80,55 +80,8 @@ metricsCmd
   });
 
 metricsCmd
-  .command("agent")
-  .description("Show agent metrics")
-  .argument("<agent>", "Agent name")
-  .requiredOption("-e, --experiment <experiment>", "Experiment name")
-  .action(async (agent, options) => {
-    const experiment = await ExperimentResource.findByName(options.experiment);
-    if (!experiment) {
-      return exitWithError(
-        new Err(
-          new SrchdError(
-            "not_found_error",
-            `Experiment '${options.experiment}' not found.`,
-          ),
-        ),
-      );
-    }
-
-    const metrics = await Metrics.tokenUsage(experimentRes);
-      return exitWithError(
-        new Err(
-          new SrchdError(
-            "not_found_error",
-            `Agent '${options.agent}' not found in experiment '${options.experiment}'.`,
-          ),
-        ),
-      );
-    }
-
-    const metrics = await Metrics.agentMessages(experiment, agentRes);
-    if (!metrics) {
-      return exitWithError(
-        new Err(
-          new SrchdError(
-            "not_found_error",
-            `Experiment '${options.experiment}' not found.`,
-          ),
-        ),
-      );
-    }
-
-    console.table([metrics]);
-  });
-
-const tokensMetric = metricsCmd
-  .command("tokens")
-  .description("Show token usage");
-
-tokensMetric
-  .command("full")
+  .command("token-usage")
+  .description("Show token usage")
   .argument("<experiment>", "Experiment name")
   .action(async (experiment) => {
     const experimentRes = await ExperimentResource.findByName(experiment);

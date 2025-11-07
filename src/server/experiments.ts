@@ -6,6 +6,9 @@ import {
   baseTemplate,
   experimentNav,
   prepareChartData,
+  renderMessageMetrics,
+  renderTokenUsageMetrics,
+  renderPublicationMetrics,
   safeGradeClass,
   safeReasonClass,
   safeScriptJSON,
@@ -15,6 +18,7 @@ import {
 } from "./styling";
 import { BlankEnv, BlankInput } from "hono/types";
 import { Context } from "hono";
+import { Metrics } from "../metrics";
 
 type Input = Context<BlankEnv, any, BlankInput>;
 
@@ -33,6 +37,11 @@ export const experimentOverview = async (c: Input, isProd: boolean = false) => {
 
   const expData = experiment.toJSON();
 
+  // Fetch metrics
+  const messageMetrics = await Metrics.messages(experiment);
+  const tokenMetrics = await Metrics.tokenUsage(experiment);
+  const publicationMetrics = await Metrics.publications(experiment);
+
   const experimentName = sanitizeText(expData.name);
   const content = `
     ${experimentNav(uuid, "overview")}
@@ -49,6 +58,10 @@ export const experimentOverview = async (c: Input, isProd: boolean = false) => {
     <div class="card">
       <div class="content">${sanitizeText(expData.problem)}</div>
     </div>
+
+    ${renderMessageMetrics(messageMetrics)}
+    ${renderTokenUsageMetrics(tokenMetrics)}
+    ${renderPublicationMetrics(publicationMetrics)}
   `;
 
   const breadcrumb = `<a href="/">${isProd ? "Home" : "Experiments"}</a> > ${experimentName}`;

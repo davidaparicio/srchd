@@ -1,5 +1,13 @@
 import sanitizeHtml from "sanitize-html";
 import { marked } from "marked";
+import {
+  AgentMessageMetrics,
+  AgentPublicationMetrics,
+  MessageMetrics,
+  PublicationMetrics,
+  TokenMetrics,
+} from "../metrics/types";
+import { TokenUsage } from "../models";
 
 export const sanitizeText = (value: unknown): string => {
   const input = value === null || value === undefined ? "" : String(value);
@@ -375,6 +383,70 @@ export const baseTemplate = (
       font-size: 11px;
       font-family: monospace;
     }
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+      margin: 10px 0;
+    }
+    .metric-item {
+      background: #f8f9fa;
+      padding: 8px;
+      border-radius: 3px;
+      border: 1px solid #e0e0e0;
+    }
+    .metric-label {
+      font-size: 0.85em;
+      color: #666;
+      margin-bottom: 3px;
+    }
+    .metric-value {
+      font-size: 1.2em;
+      font-weight: bold;
+      color: #333;
+    }
+    .metric-bar {
+      height: 20px;
+      background: #e0e0e0;
+      border-radius: 3px;
+      margin: 5px 0;
+      position: relative;
+      overflow: hidden;
+    }
+    .metric-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.3s ease;
+    }
+    .metric-bar-label {
+      position: absolute;
+      left: 5px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.75em;
+      color: #333;
+      font-weight: bold;
+    }
+    .metrics-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0;
+      font-size: 0.9em;
+    }
+    .metrics-table th,
+    .metrics-table td {
+      padding: 6px 8px;
+      text-align: left;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    .metrics-table th {
+      background: #f0f0f0;
+      font-weight: bold;
+      color: #555;
+    }
+    .metrics-table tr:hover {
+      background: #f8f9fa;
+    }
   </style>
 </head>
 <body>
@@ -538,4 +610,244 @@ export const prepareChartData = (solutions: any[]) => {
     timePoints,
     publicationLines: publicationLinesArray,
   };
+};
+
+// Render message metrics as HTML
+export const renderMessageMetrics = (metrics: MessageMetrics | undefined) => {
+  if (!metrics) {
+    return '<div class="card"><h3>Message Metrics</h3><p>No message data available</p></div>';
+  }
+
+  const exp = metrics.experiment;
+  const agents = Object.entries(metrics.agents);
+
+  return `
+    <div class="card">
+      <h3>Message Metrics</h3>
+      <div class="metrics-grid">
+        <div class="metric-item">
+          <div class="metric-label">Total Messages</div>
+          <div class="metric-value">${sanitizeText(exp.totalMessages)}</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-label">Agent Messages</div>
+          <div class="metric-value">${sanitizeText(exp.agentMessages)}</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-label">Tool Calls</div>
+          <div class="metric-value">${sanitizeText(exp.toolCalls)}</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-label">Thinking Blocks</div>
+          <div class="metric-value">${sanitizeText(exp.thinking)}</div>
+        </div>
+      </div>
+      ${
+        agents.length > 0
+          ? `
+      <h4 style="margin-top: 15px; margin-bottom: 10px;">Per Agent</h4>
+      <table class="metrics-table">
+        <thead>
+          <tr>
+            <th>Agent</th>
+            <th>Messages</th>
+            <th>Loops</th>
+            <th>Msg/Loop</th>
+            <th>Tools/Loop</th>
+            <th>Think/Loop</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${agents
+            .map(
+              ([name, data]: [string, AgentMessageMetrics]) => `
+            <tr>
+              <td>${sanitizeText(name)}</td>
+              <td>${sanitizeText(data.totalMessages)}</td>
+              <td>${sanitizeText(data.agenticLoops)}</td>
+              <td>${sanitizeText(data.messagesPerAgenticLoop.toFixed(1))}</td>
+              <td>${sanitizeText(data.toolCallsPerAgenticLoop.toFixed(1))}</td>
+              <td>${sanitizeText(data.thinkingPerAgenticLoop.toFixed(1))}</td>
+            </tr>
+          `,
+            )
+            .join("")}
+        </tbody>
+      </table>
+      `
+          : ""
+      }
+    </div>
+  `;
+};
+
+// Render token usage metrics as HTML with bar charts
+export const renderTokenUsageMetrics = (metrics: TokenMetrics | undefined) => {
+  if (!metrics) {
+    return '<div class="card"><h3>Token Usage</h3><p>No token data available</p></div>';
+  }
+
+  const exp = metrics.experimentTokenUsage;
+  const agents = Object.entries(metrics.agentsTokenUsage);
+  const throughput = metrics.tokenThroughput;
+
+  const inputTokens = exp.input;
+  const outputTokens = exp.output;
+  const thinkingTokens = exp.thinking;
+  const cachedTokens = exp.cached;
+  const totalTokens = exp.total;
+
+  if (totalTokens === 0) {
+    return '<div class="card"><h3>Token Usage</h3><p>No token usage recorded yet</p></div>';
+  }
+
+  // Calculate max for chart scaling
+  const agentsWithTotals = agents
+    .map(([name, data]: [string, TokenUsage]) => ({
+      name,
+      total: data.total,
+    }))
+    .filter((agent) => agent.total > 0)
+    .sort((a, b) => b.total - a.total);
+
+  const maxAgentTokens = Math.max(...agentsWithTotals.map((a) => a.total), 1);
+
+  return `
+    <div class="card">
+      <h3>Token Usage</h3>
+      <div class="metrics-grid">
+        <div class="metric-item">
+          <div class="metric-label">Total Tokens</div>
+          <div class="metric-value">${sanitizeText(totalTokens.toLocaleString())}</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-label">Input Tokens</div>
+          <div class="metric-value">${sanitizeText(inputTokens.toLocaleString())}</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-label">Cached Tokens</div>
+          <div class="metric-value">${sanitizeText(cachedTokens.toLocaleString())}</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-label">Thinking Tokens</div>
+          <div class="metric-value">${sanitizeText(thinkingTokens.toLocaleString())}</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-label">Output Tokens</div>
+          <div class="metric-value">${sanitizeText(outputTokens.toLocaleString())}</div>
+        </div>
+        ${
+          throughput
+            ? `
+        <div class="metric-item">
+          <div class="metric-label">Tokens/Second</div>
+          <div class="metric-value">${sanitizeText(throughput.toFixed(2))}</div>
+        </div>
+        `
+            : ""
+        }
+      </div>
+
+      ${
+        agentsWithTotals.length > 0
+          ? `
+      <div style="margin-top: 20px;">
+        <h4 style="margin-bottom: 15px;">Token Usage by Agent</h4>
+        <svg width="100%" height="${Math.max(agentsWithTotals.length * 35 + 60, 200)}" style="border: 1px solid #ddd; border-radius: 3px; background: white;">
+          <!-- Y-axis labels (agent names) -->
+          ${agentsWithTotals
+            .map(
+              (agent, i) => `
+            <text x="10" y="${35 + i * 35}" class="chart-text" text-anchor="start" dominant-baseline="middle">${sanitizeText(agent.name)}</text>
+          `,
+            )
+            .join("")}
+
+          <!-- Bars -->
+          ${agentsWithTotals
+            .map((agent, i) => {
+              const barWidth = (agent.total / maxAgentTokens) * 65;
+              return `
+            <rect x="30%" y="${25 + i * 35}" width="${barWidth}%" height="20" fill="#4a90e2" rx="2" />
+            <text x="${32 + barWidth}%" y="${35 + i * 35}" class="chart-text" text-anchor="start" dominant-baseline="middle">${sanitizeText(agent.total.toLocaleString())}</text>
+          `;
+            })
+            .join("")}
+
+          <!-- X-axis label -->
+          <text x="50%" y="${agentsWithTotals.length * 35 + 50}" class="chart-text" text-anchor="middle">Total Tokens</text>
+        </svg>
+      </div>
+      `
+          : '<p style="margin-top: 15px; color: #666;">No agent token usage recorded yet</p>'
+      }
+    </div>
+  `;
+};
+
+// Render publication metrics as HTML
+export const renderPublicationMetrics = (
+  metrics: PublicationMetrics | undefined,
+) => {
+  if (!metrics) {
+    return '<div class="card"><h3>Publication Metrics</h3><p>No publication data available</p></div>';
+  }
+
+  const exp = metrics.experiment;
+  const agents = Object.entries(metrics.agents);
+
+  return `
+    <div class="card">
+      <h3>Publication Metrics</h3>
+      <div class="metrics-grid">
+        <div class="metric-item">
+          <div class="metric-label">Total Publications</div>
+          <div class="metric-value">${sanitizeText(exp.totalPublications)}</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-label">Published</div>
+          <div class="metric-value">${sanitizeText(exp.totalPublished)}</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-label">Average Review</div>
+          <div class="metric-value">
+            <span class="grade ${safeGradeClass(exp.averageReviewGrade)}">${sanitizeText(exp.averageReviewGrade.replace("_", " "))}</span>
+          </div>
+        </div>
+      </div>
+      ${
+        agents.length > 0
+          ? `
+      <h4 style="margin-top: 15px; margin-bottom: 10px;">Per Agent</h4>
+      <table class="metrics-table">
+        <thead>
+          <tr>
+            <th>Agent</th>
+            <th>Total</th>
+            <th>Published</th>
+            <th>Pub Rate</th>
+            <th>Avg Review</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${agents
+            .map(
+              ([name, data]: [string, AgentPublicationMetrics]) => `
+            <tr>
+              <td>${sanitizeText(name)}</td>
+              <td>${sanitizeText(data.totalPublications)}</td>
+              <td>${sanitizeText(data.totalPublished)}</td>
+              <td>${sanitizeText((data.publicationRate * 100).toFixed(0))}%</td>
+              <td><span class="grade ${safeGradeClass(data.averageReviewGrade)}">${sanitizeText(data.averageReviewGrade.replace("_", " "))}</span></td>
+            </tr>
+          `,
+            )
+            .join("")}
+        </tbody>
+      </table>
+      `
+          : ""
+      }
+    </div>
+  `;
 };
