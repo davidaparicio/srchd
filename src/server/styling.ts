@@ -687,15 +687,14 @@ export const renderTokenUsageMetrics = (metrics: TokenMetrics | undefined) => {
     return '<div class="card"><h3>Token Usage</h3><p>No token data available</p></div>';
   }
 
-  const exp = metrics.experimentTokenUsage;
-  const agents = Object.entries(metrics.agentsTokenUsage);
-  const throughput = metrics.tokenThroughput;
-
+  const exp = metrics.experiment;
+  const agents = Object.entries(metrics.agents);
   const inputTokens = exp.input;
   const outputTokens = exp.output;
   const thinkingTokens = exp.thinking;
   const cachedTokens = exp.cached;
   const totalTokens = exp.total;
+  const tokensPerSecond = exp.tokensPerSecond;
 
   if (totalTokens === 0) {
     return '<div class="card"><h3>Token Usage</h3><p>No token usage recorded yet</p></div>';
@@ -737,11 +736,11 @@ export const renderTokenUsageMetrics = (metrics: TokenMetrics | undefined) => {
           <div class="metric-value">${sanitizeText(outputTokens.toLocaleString())}</div>
         </div>
         ${
-          throughput
+          tokensPerSecond
             ? `
         <div class="metric-item">
           <div class="metric-label">Tokens/Second</div>
-          <div class="metric-value">${sanitizeText(throughput.toFixed(2))}</div>
+          <div class="metric-value">${sanitizeText(tokensPerSecond.toFixed(2))}</div>
         </div>
         `
             : ""
